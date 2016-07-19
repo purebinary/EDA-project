@@ -1,4 +1,7 @@
-# White Wine Quality Exploration by Jerry Wang #
+---
+output: html_document
+---
+# White Wine Quality Exploration by Jerry Wang
 ========================================================
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
@@ -10,38 +13,136 @@
 # You should set echo=FALSE for all code chunks in your file.
 
 library(ggplot2)
+library(gridExtra)
+library(GGally)
 ```
 
 ```{r echo=FALSE, Load_the_Data}
 # Load the Data
 
-wine <- read.csv('wineQualityWhites.csv')
-names(wine)
+wines <- read.csv('wineQualityWhites.csv')
+names(wines)
+str(wines)
 ```
+Our dataset consists of thirteen variables(12 attributes + 1 output attribute) with 4898 observations, in which, quality is the output attribute, 11 input variables (based on physicochemical tests) could be relevent, we will explore it in depth. 
 
 # Univariate Plots Section
-```{r echo=FALSE, Univariate_Plots}
+```{r echo=FALSE, Univariate_Plots_quality}
 
+qplot(x = quality, data = wines)
+summary(wines$quality)
+table(wines$quality)
+wines$quality <- factor(wines$quality)
+```
+Wine quality can be scored from 0~10, in which 0 is the worest and 10 is the best. Quality histogram appears normal distribution, best quality is 9, most wine's quality is scored between 5~7. In our dataset, Quality is a categorical variable, which has 7 values(3,4,5,6,7,8,9), therefore I change it to factor variable so that it's easy for me to do further data exploring and anslysis. 
+
+```{r echo=FALSE, Univariate_Plots_acid}
+
+qplot(x=fixed.acidity, data = wines, binwidth = 0.2)
+summary(wines$fixed.acidity)
+
+qplot(x=volatile.acidity, data = wines, binwidth = 0.01)
+summary(wines$volatile.acidity)
+
+qplot(x=citric.acid, data = wines, binwidth = 0.05)
+summary(wines$citric.acid)
+```
+Above three plots for fixed.acidity, volatitle.acidity and citrix.acid all appear normal distribution with some outliers far away from the Median, I am wondering what kind of wines had those attribute values?
+
+```{r echo=FALSE, Univariate_Plots_sugar}
+
+qplot(x=residual.sugar, data = wines, binwidth = 0.5)+
+  scale_x_continuous(limits=c(0,30), breaks = seq(0,30,1))
+
+qplot(x=residual.sugar, data = wines, binwidth = 0.1) +
+  scale_x_log10(breaks = seq(0,30,1))
+summary(wines$residual.sugar)
+```
+Distribution of residual.sugar has a long tail on thr right side. After tranformed with log10, the distribution appears bimodal with the peaking around 1.5 and 7.5. Residual sugar means the amount of sugar remaining after fermentation stops, normally wine have more than  1 gram/liter sugar and wines with greater than 45 grams/liter are considered sweet. Here, we have minimze sugar is 0.6 and maximize sugar is 65.8.
+
+```{r, echo=FALSE, Univariate_Plots_chlorides}
+
+qplot(x=chlorides, data = wines, binwidth = 0.005) 
+
+summary(wines$chlorides)
+```
+chlorides: the amount of salt in the wines, median value is 0.043, mean is 0.04577 close to median.
+
+```{r, echo=FALSE, Univariate_Plots_SO2}
+
+p1 <- qplot(x=free.sulfur.dioxide, data = wines, binwidth = 5)
+summary(wines$free.sulfur.dioxide)
+
+p2 <- qplot(x=total.sulfur.dioxide, data = wines)
+summary(wines$total.sulfur.dioxide)
+
+wines$ratio.free.SO2 <- with(wines, free.sulfur.dioxide/total.sulfur.dioxide)
+
+p3 <- qplot(x=ratio.free.SO2, data =  wines, binwidth = 0.01)
+summary(wines$ratio.free.SO2)
+
+grid.arrange(p1, p2, p3)
+```
+histogram for free SO2, total SO2 and raio of free SO2, appear all normal distribution. average of ratio of free SO2 in total SO2 is around 25.6%
+
+```{r, echo=FALSE, Univariate_Plots_density}
+qplot(x=density, data = wines, binwidth = 0.0005) 
+summary(wines$density)
+
+```
+Density of wine is very close to water's, average of density is 0.9940
+
+```{r, echo=FALSE, Univariate_Plots_pH}
+qplot(x= pH, data = wines)
+summary(wines$pH)
+```
+pH: describes how acidic or basic a wine is on a scale from 0 (very acidic) to 14 (very basic); most wines are between 3-4 on the pH scale
+
+```{r, echo=FALSE, Univariate_Plots_sluphates}
+qplot(x = sulphates, data = wines, binwidth = 0.02)
+summary(wines$sulphates)
+```
+
+```{r, echo=FALSE, Univariate_Plots_alcohol}
+qplot(x=alcohol, data= wines, binwidth = 0.1)
+summary(wines$alcohol)
 
 ```
 
 # Univariate Analysis
 
 ### What is the structure of your dataset?
+There are 4898 white wines in the dataset with 13 variables (fixed.acidity, volatile.acidity, citric.acid, residual.sugar, chlorides, free.sulfur.dioxide, total.sulfur.dioxide, density, pH, sulphates, alcohol, quality, and index X). 
+
+quality is the output attribute, scored from 0~10, in which 0 is the worest and 10 is the best, original it's integer variable(values: 3,4,5,6,7,8,9), 11 input variables(excluded X) are all number variables. 
+
+Other observations:
+The best quality of wines is scored 9, which is only 5 quantites, very rare.
+most wines quality is in median level 6.
 
 ### What is/are the main feature(s) of interest in your dataset?
+The main features in the data set are output quality, which may be correlated with some of these chemical attributes. I’d like to find out which attributes influence the quality of white wine. I suspect alcohol and some combination of the other chemical attributes can be used to build a predictive model to quality the wine.
 
 ### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+fixed.acidity, volatile.acidity, citric.acid, residual.sugar, free.sulfur.dioxide, total.sulfur.dioxide, density, pH, sulphates likely contribute to quality of wines
 
 ### Did you create any new variables from existing variables in the dataset?
+Yes, I create a new variable ratio.free.SO2 for analysis the corelation between quality and sulfur dioxide in the Bivariate section
 
 ### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+I transformed the positive skewed residual.sugar distributions with log10. The tranformed distribution for residual.sugar appears bimodal with the peaking around 1.5 and 7.5.
 
+I also change quality properties to factor variable, there are 7 factors(3,4,5,6,7,8,9), therefore in the Bivariate and Multivariate section, I can explore these chimical atttributes with different quality groups.  
 
 
 # Bivariate Plots Section
-```{r echo=FALSE, Bivariate_Plots}
+```{r, echo=FALSE, Bivariate_Plots_ggpairs}
+ggpairs(wines, axisLabels = "internal")
+```
 
+```{r echo=FALSE, Bivariate_Plots}
+ggplot(data = subset(wines, quality >=8), aes(x= quality, y = residual.sugar)) +
+  geom_point()
 ```
 
 # Bivariate Analysis
