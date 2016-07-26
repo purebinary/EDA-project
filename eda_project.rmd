@@ -39,7 +39,7 @@ Our dataset consists of thirteen variables with 4898 observations, the quality o
 
 ### Quality
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Univariate_Plots_quality}
-theme_set(theme_minimal(10))
+theme_set(theme_minimal(20))
 theme_set(theme_bw())
 
 qplot(x = quality, data = wines)
@@ -57,9 +57,6 @@ ggplot(aes(x = quality.class), data= wines) +
   geom_bar(stat = "count", 
            aes(y = ..count../sum(..count..)), 
            width = 0.4)
-
-# change wine quality variable to factor
-wines$quality <- factor(wines$quality)
 ```
 
 Wines quality is scored from 0~10, in which 0 is the worest and 10 is the best. Quality histogram appears normal distribution, best quality is 9, most wine's quality is scored between 5~6, There are more than 70% of wines in medium quality class. 
@@ -189,7 +186,7 @@ Yes, I create a new variable quality.class, and will use it to analyse the corel
 ### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
 I transformed the positive skewed residual.sugar distributions with log10. The tranformed distribution for residual.sugar appears bimodal with the peaking around 1.5 and 7.5.
 
-I also change quality properties to factor, and add a new factor, quality.class(low, medium and high), therefore in the Bivariate and Multivariate sections, I can explore those atttributes with different quality groups.  
+I added a new factor, quality.class(low, medium and high), therefore in the Bivariate and Multivariate sections, I can explore those atttributes with different quality groups.  
 
 ------
 
@@ -205,100 +202,124 @@ pairs.panels(wines_features)
 
 ```
 
-Looking at the plot matrix, we can find that correlation coefficient between two variables above, the strongest correlations with quality occur with alcohol, density and chlorides(perasion r: 044, -0.31, -0.21). And the strongest correlations with alcohol occur with density, total.sulfur.dioxide, residual.sugar and chlorides (perasion r from -0.78 ~ -0.36). 
+Looking at the plot matrix, we can find that correlation coefficient between two variables above, the strongest correlations with quality occur with alcohol, density and chlorides(pearson r: 044, -0.31, -0.21). And the strongest correlations with alcohol occur with density, total.sulfur.dioxide, residual.sugar and chlorides (pearson r from -0.78 ~ -0.36). 
 
 ### Quality vs Alcohol
 ```{r, echo=FALSE,  message=FALSE, warning=FALSE, Bivariate_Plots_quality_alcohol}
-ggplot(data = wines, aes(x=alcohol)) +
+p1 <- ggplot(data = wines, aes(x=alcohol)) +
   geom_freqpoly(aes(color= quality.class)) 
 
-ggplot(data = wines, aes(x = alcohol, y = quality)) +
-  geom_jitter()
+p2 <- ggplot(data = wines, aes(x = alcohol, y = quality)) +
+  geom_jitter(alpha = 0.1)
 
-ggplot(data = wines, aes(x = alcohol, y = quality.class)) +
-  geom_jitter()
+p3 <- ggplot(data = wines, aes(x = alcohol, y = quality.class)) +
+  geom_jitter(alpha = 0.1)
 
-ggplot(data = wines, aes(x = quality, y = alcohol)) +
-  geom_boxplot(aes(color = quality))
+p4 <- ggplot(data = wines, aes(x = factor(quality), y = alcohol)) +
+  geom_boxplot()
+
+grid.arrange(p1, p4, p2, p3, ncol = 2)
 
 by(wines$alcohol, wines$quality, summary)
+cor(wines$alcohol, wines$quality)
+with(subset(wines, quality > 4), cor(quality, alcohol))
 
 ```
 
-In this case, plots show wines with quality.class medium and high tend to have higher alcohol values. The boxplot shows that wines with quality 6~9 have higher alcohol values.
+In this case, plots show wines with quality.class medium and high tend to have higher alcohol values. The boxplot shows that wines with quality 6~9 have higher alcohol values, correlation pearson r value is 0.436, which is 0.468, increasing about 3% when quality in the range of 5 ~ 9.  
 
 ###Quality vs Density
 
 ```{r, echo=FALSE,  message=FALSE, warning=FALSE, Bivariate_Plots_quality_density}
-ggplot(data = wines, aes(x = density, y = quality)) +
-  geom_jitter(aes(color=quality), alpha = 0.5)
+ggplot(data = subset(wines, density < 1.01),
+       aes(x = factor(quality), y = density)) +
+  geom_jitter(alpha = 0.2) +
+  geom_boxplot(alpha = 0.1) +
+  geom_smooth(aes(x = quality - 2 , y = density),
+                method = "lm", 
+                se = FALSE, size = 2)
 
-ggplot(data = wines, aes(x = density, y = quality.class)) +
-  geom_jitter(aes(color=quality.class), alpha = 0.5)
-
-ggplot(data = wines, aes(x = quality, y = density)) +
-  geom_boxplot()
+ggplot(data = subset(wines, density < 1.01), 
+       aes(x = quality.class, y = density)) +
+  geom_jitter(alpha = 0.4) +
+  geom_boxplot(alpha = 0.2)
 
 by(wines$density, wines$quality, summary)
+cor(wines$quality, wines$density)
+
 ```
 
-In this case, density vs quality or quality.class scatterplots show wines with quality 6-9/medium-high tend to have lower density, boxplot also display the same trend as scatterplots.
+In this case, density vs quality or quality.class plots show wines with quality 5 ~ 9 / medium ~ high tend to have lower density, boxplot also display the same trend as scatterplots, correlation pearson r value is -0.307
 
 ###Quality vs Chlorides
+
 ```{r,echo=FALSE,  message=FALSE, warning=FALSE, Bivariate_Plots_quality_chlorides}
-ggplot(data = wines, aes(x = chlorides, y = quality)) +
-  geom_jitter(aes(color = quality))
-
-ggplot(data = wines, aes(x = chlorides, y = quality.class)) +
-  geom_jitter(aes(color = quality.class), alpha = 0.2)
-
-ggplot(data = wines, aes(x = quality, y = chlorides)) +
-  geom_boxplot(aes(color = quality))
+ggplot(data = wines, aes(x = factor(quality), y = chlorides)) +
+  coord_cartesian(ylim = c(0, 0.1)) +
+  geom_jitter(alpha = 0.3) +
+  geom_boxplot(alpha = 0.2) +
+  geom_smooth(aes(x = quality - 2, y = chlorides),
+                method = "lm", 
+                se = FALSE, size = 2)
 
 by(wines$chlorides, wines$quality, summary)
+cor(wines$chlorides, wines$quality)
 
 ```
 
-In this case, quality vs chlorides scatterplot shows wines with quality 6-9 tend to have lower chlorides, quality.class vs chlorides scatterplot and boxplot also display the same trend.
+In this case, quality vs chlorides scatterplot shows wines with quality 5 ~ 9 tend to have lower chlorides, and boxplot also display the same trend, correlation pearson r value is -0.21
 
 ###Alcohol vs Density
 
 ```{r, echo=FALSE,  message=FALSE, warning=FALSE, Bivariate_Plots_alcohol_density}
 
-ggplot(data = wines, aes(x = density, y = alcohol)) +
-  geom_point(alpha = 0.1) 
+ggplot(data = wines, aes(x = alcohol, y = density)) +
+  scale_y_continuous(limits = c(0.985, 1.005)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", 
+              linetype = 2, 
+              size = 1)
+cor(wines$alcohol, wines$density)
 
 ```
 
-We can see alcohol vs density have negitave linear relationship when we ignore the outliers.
+We can see alcohol vs density have negitave linear relationship when we ignore the outliers, correlation pearson r is -0.78
 
 ###Alcohol vs Total.Sulfur.Dioxide
 ```{r, echo=FALSE,  message=FALSE, warning=FALSE, Bivariate_Plots_alcohol_SO2} 
 ggplot(data = wines, aes(x = total.sulfur.dioxide, y = alcohol)) +
   geom_point(alpha = 0.2)+
   geom_smooth()
+
+cor(wines$alcohol, wines$total.sulfur.dioxide)
 ```
 
-Looking at scatterplot, total.sulfur.dixoxide vaules distribute on all level of alcohol, although we can see alcohol tends to decrease while total.sulfur.dioxide increasing in general trend, it's not a linear relationship.
+Looking at scatterplot, total.sulfur.dixoxide vaules distribute on all level of alcohol, although we can see alcohol values tend to decrease while total.sulfur.dioxide increasing in general trend, it's not a linear relationship, correlation pearson r is -0.449
 
 ###Alcohol vs Residual.Sugar
 ```{r, echo=FALSE,  message=FALSE, warning=FALSE, Bivariate_Plots_alcohol_sugar}
-ggplot(data = wines, aes(x= residual.sugar, y = alcohol)) +
-  geom_point(alpha = 0.1)
+ggplot(data = wines, aes(x= alcohol, y =  residual.sugar)) +
+  scale_y_continuous(limits = c(0, 20)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", size = 1)
+
+cor(wines$alcohol, wines$residual.sugar)
 
 ```
 
-In gereral trend, with residual.sugar values increasing, alcohol values tend to decrease. 
+In gereral trend, with residual.sugar values increasing, alcohol values tend to decrease, correlation pearson r is -0.45
 
 ###Alcohol vs Chlorides
 ```{r, echo=FALSE,  message=FALSE, warning=FALSE, Bivariate_Plots_alcohol_chlorides}
-ggplot(data = wines, aes(x = chlorides, y = alcohol)) +
-  scale_x_continuous(limits = c(0, 0.1)) +
-  geom_point(alpha = 0.5)
+ggplot(data = wines, aes(x = alcohol, y = chlorides)) +
+  scale_y_continuous(limits = c(0.01, 0.08)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", size = 1)
 
+cor(wines$alcohol, wines$chlorides)
 ```
 
-With the cholorides increasing in the range of 0-0.1, alcohol values trend to decrease
+With the cholorides increasing in the range of 0-0.1, alcohol values tend to decrease, correlation pearson r is -0.36
 
 # Bivariate Analysis
 
@@ -323,30 +344,46 @@ Residual.sugar has the strongest relationship with density in the dataset, whose
 
 ###Alcohol vs Density with Quality as Color 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_alcohol_density_quality}
-ggplot(data = wines, aes(x = alcohol, y =  density)) +
-  geom_point(aes(color = quality))
+ggplot(data = wines, 
+       aes(x = alcohol, 
+           y =  density, color = factor(quality))) +
+  scale_y_continuous(limits = c(0.987, 1.002)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE,size = 1)
 
-ggplot(data = wines, aes(x=alcohol, y =  density)) +
-  geom_point(aes(color = quality.class))
+ggplot(data = wines, 
+       aes(x=alcohol, 
+           y =  density, color = quality.class)) +
+  scale_y_continuous(limits = c(0.987, 1.002)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE, size = 1)
 
 ```
 
-Here, plots clearly show wines with higher quality are in the right side of the plots， which is further shown that higher quality wines tend to have high alcohol and low density.
+Here, plots clearly show the negative linear relationship between alcohol and density in all quality levels. Wines with higher quality are in the right side of the plots， which is further shown that higher quality wines tend to have high alcohol and low density.
 
 ###Alcohol vs Residual.Sugar with Quality as Color 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_alcohol_sugar_quality}
-ggplot(data = wines, aes(x=alcohol, y = residual.sugar )) +
-  geom_point(aes(color = quality.class))
+ggplot(data = wines, 
+       aes(x=alcohol, 
+           y = residual.sugar, color = quality.class)) +
+  scale_y_continuous(limits = c(0, 30)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", se = FALSE, size = 1)
 ```
+
 
 ###Alcohol vs Chlorides with Quality as Color 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, Multivariate_Plots_alcohol_chlorides_quality}
-ggplot(data = wines, aes(x = alcohol, y = chlorides)) +
-  scale_y_continuous(limits = c(0, 0.1)) +
-  geom_point(aes(color = quality.class))
+ggplot(data = wines, 
+       aes(x = alcohol, 
+           y = chlorides, color = quality.class)) +
+  scale_y_continuous(limits = c(0.01, 0.08)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", se = FALSE)
 ```
 
-Same as Alcohol vs Density, plots show that higher quality wines tend to have high alcohol values, low residual.sugar and low chlorides.
+Same as Alcohol vs Density, plots show that alcohol has negative linear relationship with residual.sugar and chlorides, and higher quality wines tend to have high alcohol values, low residual.sugar and low chlorides.
 
 ###Linear Model
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, linear_models}
@@ -381,26 +418,32 @@ Since I didn't find the linear relationship between quality and relvant variable
 ### Plot One
 ```{r echo=FALSE, Plot_One}
 qplot(x = quality, y = ..count../sum(..count..),
-      data = wines, geom = "bar",
+      data = wines, binwidth = 0.5,
+      geom = "histogram",
       xlab = "Quality (Worst ---> Best)",
       ylab = "Percentage of Wines",
       main = "White Wine Quality",
       color = I("black"), fill = I("#0f99D9")) +
+  scale_x_continuous(breaks = seq(3, 9, 1)) +
   scale_y_continuous(limits = c(0, 0.5),  
                      breaks = seq(0, 0.5, 0.02))
 ```
 
 ### Description One
 
-The quality of wines can be scored from 0~10, around 75% of wines are scored in quality 5 and 6. There are no wines with quality less than 3 or greater than 9 in this dataset. 
+My main purpose is to find which chemical properties influence the quality of wines, therefore I chose the quality distribution histogram as my first final plot. The quality of wines can be scored from 0~10, around 75% of wines are scored in quality 5 and 6. quality 3, 9 of wines are less than 2%. There are no wines with quality less than 3 or greater than 9 in this dataset. 
 
 ### Plot Two
 ```{r echo=FALSE, Plot_Two}
 
-ggplot(data = wines, aes(x = quality, y = alcohol)) +
-  geom_boxplot(aes(color = quality)) + 
+ggplot(data = wines, aes(x = factor(quality), y = alcohol)) +
   scale_y_continuous(limits = c(8, 15),  
-                     breaks = seq(8, 15, 0.5))+
+                     breaks = seq(8, 15, 0.5)) +
+  geom_boxplot(alpha = 0.5, fill = "white", colour = "#3366FF") + 
+  geom_smooth(aes(x = quality - 2, y = alcohol),
+                method = "lm", 
+                se = FALSE) +
+  geom_jitter(alpha = 0.1) +
   ggtitle("Quality vs Alcohol") +
   xlab("Quality (Worst ---> Best)") +
   ylab("Alcohol(%)")
@@ -408,24 +451,26 @@ ggplot(data = wines, aes(x = quality, y = alcohol)) +
 
 ###Description Two
 
-With the increase of quality, the means of alcohol value tend to increase in the range of quality 5~9. However, in range of quality 3~5，the means of alcohol value tend to decrease.
+The quality of wines has the strongest relationship with alcohol, so the second plot, I prensented the relationship between quality and alcohol. we can see that alcohol value tend to increase in the range of quality 5 ~ 9. However, in range of quality 3 ~ 5，the means of the alcohol values tend to decrease.
 
 ###Plot Three
 ```{r echo=FALSE, Plot_Three}
-ggplot(data = wines, aes(x = alcohol, y =  density)) +
-  geom_point(aes(color = quality.class)) +
-  coord_cartesian(ylim=c(0.985, 1.01)) +
-  geom_smooth(method = "lm", linetype = 2, color = "green") +
+ggplot(data = wines, 
+       aes(x = alcohol, 
+           y =  density, color = quality.class)) +
+  coord_cartesian(ylim=c(0.987, 1.002)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", se = FALSE) +
   ggtitle("Alcohol vs Density with Quality.class as Color ") +
   xlab("Alcohol(%)") + 
   ylab("Density") +
-  theme_dark() +
-  scale_color_brewer(type = 'seq')
+  theme_dark() 
+ 
 ```
 
 ###Description Three
 
-With the alcohol values increasing, density tend to decrease, there is a negitave linear relationship between alcohol and density. The plot also shows that wines with higher quality are in the right side of the plots，which is further illustrative that higher quality wines tend to have high alcohol and low density.
+The last plot I chose to visualize the relationship between Density and Alcohol. Density has the strongest linear relationship with alcohol, pearson r value is -0.78. While the increase of alcohol values, density tends to decrease, all thhree classes of quality show the same trend. The plot also shows that wines with higher quality are in the right side of the plots，which is further illustrative that higher quality wines tend to have high alcohol and low density.
 
 ------
 
@@ -435,8 +480,12 @@ This dataset consists of thirteen variables with 4898 observations. My main purp
 
 Firstly, I started to understand the variables by virsualizing the distribution of individual variables and looked for unusual behaviors in the histograms, and I transformed the residual.sugar variable distributions with log10.
 
-Next, I used plot matrix to calculate and plot the correlations between the variables. None of the correlations with quality are above 0.5, the strongest correlation with quality is alcohol. Alcohol has relatively strong correlations with density, residual.sugar and chlorides. Through bivariate visualization analysis, I found that the quality of wine vs alcohol has two different direction relationships.it has negitive relationship with alcohol in quality 3-5, positive in quality 5-9. Alcohol has linear relationhips with density, residual.sugar and chlorides. 
+Next, I used plot matrix to calculate and plot the correlations between the variables. None of the correlations with quality are above 0.5, the strongest correlation with quality is alcohol, but correlation coefficient value is only 0.436. 
 
-Eventually, I explored the quality of wines across with alcohol, density, chlorides. Higher quality wines tend to have high alcohol, low residual.sugar and low chlorides values, so alcohol, density and chlorides infuluence the quality of white wines most. Since the plots show there is a linear relationship betwen alcohol and it's relavant variables (density, residual.sugar and chlorides), so that I can build a linear model and use this model to predict the alcohol values.
+I struggled understanding the relationship between quality and alcohol, I was expecting there was a linear relationship between quality and alcohol, and even tried to build a preliminary linear model, but the accuracy never exceed to 65%. Through bivariate visualization analysis, I finally found out that the quality of wine vs alcohol has two different direction relationships. It has negitive relationship with alcohol in quality 3-5, positive in quality 5-9. Eventually, I explored the quality of wines across with alcohol, density, chlorides. Higher quality wines tend to have high alcohol, low residual.sugar and low chlorides values, so alcohol, density and chlorides infuluence the quality of white wines most. 
+
+Since the plots show there is a linear relationship betwen alcohol and it's relavant variables (density, residual.sugar and chlorides), so that I can build a linear model and use this model to predict the alcohol values.
+
+Other challenges I have experienced mostly focused on the R language itself, like how to use factors, reshaping the dataset and so on, but finanlly I handled them all by checking the online documents and Help files
 
 After I did some rearch, I found that wine brewing is a very complicated process. The quality of wine is affected by many factors, such as grape varieties, geographical location and temperature, fermentation temperature and time, the physicochemical properties in our dataset and more. If we got all those information, I believe we could make a very good model to predict the wines quality, and even use this model to optimize the brewing process.
